@@ -4,13 +4,24 @@ import time
 import ClientInt
 import json
 import pymysql
-from ClientInt import addSession, querySession, updateSession, deleteSession, exist_or_not, query_pysql
+from ClientInt import addSession, querySession, updateSession, deleteSession, exist_or_not, query_getHash
 import threading
-
 
 class MyUDPHandler (socketserver.BaseRequestHandler):
 
     def handle(self):
+
+        def db_operation(_tables):
+            result_query = exist_or_not(data_want, _tables)
+            if result_query == False or result_query == None:
+                addSession(data_want, _tables)
+            else:
+                old_data_orm = query_getHash(data_want, _tables)
+                if str(hash(json.dumps(data_want).encode("utf-8"))) != old_data_orm:
+                    for client in ClientInt.listC:
+                        socket.sendto(data, client)  
+                    updateSession(data_want, _tables)  
+
         try:
             data = self.request[0]
             socket = self.request[1]
@@ -32,27 +43,14 @@ class MyUDPHandler (socketserver.BaseRequestHandler):
                         socket.sendto("{} has disconnected from this system".format(self.client_address), new_client)
 
             elif len(data) > 50:
+                print("get data now")
                 data_want = json.loads(data.decode("utf-8"))
                 if data_want["header"] == "ps":
                     del data_want["header"]
-                    result_query = exist_or_not(ClientInt.PlantSet.p_name, data_want["Name"])
-                    if result_query == False:
-                        addSession(data_want)
-                    else:
-                        #old_data_orm = querySession(ClientInt.PlantSet, ClientInt.PlantSet.p_name, data_want["Name"], 0)
-                        old_data_orm = query_pysql(data_want["Name"])
-                        if str(hash(json.dumps(data_want).encode("utf-8"))) != old_data_orm:
-                            for client in ClientInt.listC:
-                                socket.sendto(data, client)  
-                            updateSession(ClientInt.PlantSet, ClientInt.PlantSet.p_name, data_want)  
+                    db_operation("ps")
                 elif data_want["header"] == "pds":
-                    print("got plant details")
-
-                #print(data_want)
-                #pass the data to all the clients firstly:
-
-                #store the data into database:
-                #print(data_want["header"])
+                    del data_want["header"]
+                    db_operation("pds")
             
         except:
             pass
@@ -63,3 +61,6 @@ if __name__ == "__main__":
     server = socketserver.ThreadingUDPServer((HOST, PORT), MyUDPHandler)
     print("Waiting for connection......")
     server.serve_forever()
+
+
+
