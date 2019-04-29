@@ -11,15 +11,15 @@ listC = []
 
 #functions will be called:
 
-# 创建对象的基类:
+# create base class:
 Base = declarative_base()
 
-# 定义User对象:
+# define user object:
 class PlantSet(Base):
-    # 表的名字:
+    # table name:
     __tablename__ = 'PlantSet'
 
-    # 表的结构:
+    # table attributes:
     p_name = Column(String(50), primary_key=True)
     p_loc = Column(JSON)
     p_rot = Column(JSON)
@@ -35,9 +35,9 @@ class SingPlantDetails(Base):
 
 
 def querySession(q_class, q_attr, condition, choice):
-    # 初始化数据库连接:
+    # init connection of db:
     engine = create_engine('mysql+pymysql://Wennan:Furniture123456@localhost:3306/PlantInnovation', encoding = "utf-8", echo = False)
-    # 创建DBSession类型:
+    # create type of conn:
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     if choice == 0:
@@ -50,18 +50,14 @@ def querySession(q_class, q_attr, condition, choice):
     return data
 
 def exist_or_not(q_attr, condition):
-    # 初始化数据库连接:
     engine = create_engine('mysql+pymysql://Wennan:Furniture123456@localhost:3306/PlantInnovation', encoding = "utf-8", echo = False)
-    # 创建DBSession类型:
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     data = session.query(exists().where(q_attr == condition)).scalar()
     return data
 
 def addSession(data):  
-    # 初始化数据库连接:
     engine = create_engine('mysql+pymysql://Wennan:Furniture123456@localhost:3306/PlantInnovation', encoding = "utf-8", echo = False)
-    # 创建DBSession类型:
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     new_plantSet = PlantSet(p_name = data["Name"], p_loc = json.dumps(data["pos"]), p_rot = json.dumps(data["rotate"]), p_hash = str(hash(json.dumps(data).encode("utf-8"))))
@@ -71,7 +67,6 @@ def addSession(data):
 
 def updateSession(q_class, q_attr, data):
     engine = create_engine('mysql+pymysql://Wennan:Furniture123456@localhost:3306/PlantInnovation', encoding = "utf-8", echo = False)
-    # 创建DBSession类型:
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
     result = session.query(q_class).filter(q_attr == data["Name"]).first()
@@ -83,8 +78,6 @@ def updateSession(q_class, q_attr, data):
     session.close()
 
 def deleteSession(q_class, q_attr, condition):
-    engine = create_engine('mysql+pymysql://Wennan:Furniture123456@localhost:3306/PlantInnovation', encoding = "utf-8", echo = False)
-    # 创建DBSession类型:
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
 
