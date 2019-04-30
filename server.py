@@ -30,7 +30,7 @@ class MyUDPHandler (socketserver.BaseRequestHandler):
                     ClientInt.listC.append(self.client_address)
                     
                     print("{} ({}) {}".format(strftime("%Y-%m-%d %H:%M:%S", gmtime()), self.client_address, " send:"))
-                    print(data.strip().decode("utf-8"))
+                    print(data.strip().decode("utf-8")) 
 
                     for client in ClientInt.listC:
                         socket.sendto(data, client)

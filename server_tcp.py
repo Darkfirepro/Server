@@ -13,7 +13,8 @@ ip_port = ('', 6666)
 class MyTCPServer(socketserver.BaseRequestHandler):
     def handle(self):
         print("{}".format(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.client_address," has connected! ")
-        ClientInt.listC.append(self.client_address)
+        #ClientInt.listC.append(self.client_address)
+        ClientInt.listC.append(self.request)
 
         def db_operation(_tables):
             result_query = exist_or_not(data_want, _tables)
@@ -22,8 +23,9 @@ class MyTCPServer(socketserver.BaseRequestHandler):
             else:
                 old_data_orm = query_getHash(data_want, _tables)
                 if str(hash(json.dumps(data_want).encode("utf-8"))) != old_data_orm:
-                    for client in ClientInt.listC:
-                        socket.sendto(data, client)  
+                    for socket1 in ClientInt.listC:
+                        print(socket1)
+                        socket1.send(data)  
                     updateSession(data_want, _tables)  
 
         while True:
@@ -31,19 +33,24 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                 data = self.request.recv(1024)
                 socket = self.request
                 addr = self.client_address
-                if not data:
-                    try:
-                        ClientInt.listC.remove(addr)
-                    except:
-                        pass
-                    print("{}".format(strftime("%Y-%m-%d %H:%M:%S", gmtime())), addr, "has disconnected")
+                # if not data:
+                #     try:
+                #         ClientInt.listC.remove(addr)
+                #     except:
+                #         pass
+                #     print("{}".format(strftime("%Y-%m-%d %H:%M:%S", gmtime())), addr, "has disconnected")
                 
                 if len(data) < 40:
                     data_want = data.strip().decode("utf-8")
-                    print(data_want)
-                    socket.sendto("hello, here is server.".encode("utf-8"), addr)
+                    if data_want == "ClientShutDown":
+                        ClientInt.listC.remove(self.request)
+                        print("{}".format(strftime("%Y-%m-%d %H:%M:%S", gmtime())), addr, "has disconnected")
+                        socket.sendto("ok, see you".encode("utf_8"), addr)
+                    else:
+                        print(data_want)
+                        socket.sendto("hello, here is server.".encode("utf-8"), addr)
                 
-                elif len(data) > 50:
+                elif len(data) > 40:
                     data_want = json.loads(data.decode("utf-8"))
                     if data_want["header"] == "ps":
                         del data_want["header"]
