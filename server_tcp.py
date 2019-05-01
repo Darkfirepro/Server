@@ -33,22 +33,18 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                 data = self.request.recv(1024)
                 socket = self.request
                 addr = self.client_address
-                # if not data:
-                #     try:
-                #         ClientInt.listC.remove(addr)
-                #     except:
-                #         pass
-                #     print("{}".format(strftime("%Y-%m-%d %H:%M:%S", gmtime())), addr, "has disconnected")
+                if not data:
+                    try:
+                        ClientInt.listC.remove(self.request)
+                        #socket.shutdown(socket.SHUT_RD)
+                        socket.close()
+                    except:
+                        pass
+                    print("{}".format(strftime("%Y-%m-%d %H:%M:%S", gmtime())), addr, "has disconnected")
+                    #break
                 
                 if len(data) < 40:
                     data_want = data.strip().decode("utf-8")
-                    if data_want == "ClientShutDown":
-                        ClientInt.listC.remove(self.request)
-                        print("{}".format(strftime("%Y-%m-%d %H:%M:%S", gmtime())), addr, "has disconnected")
-                        socket.sendto("ok, see you".encode("utf_8"), addr)
-                    else:
-                        print(data_want)
-                        socket.sendto("hello, here is server.".encode("utf-8"), addr)
                 
                 elif len(data) > 40:
                     data_want = json.loads(data.decode("utf-8"))
