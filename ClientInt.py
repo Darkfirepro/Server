@@ -136,7 +136,7 @@ def get_location(name, sp_id):
     for i in list_1:
         for n in list_A:
             list_combine.append(n + str(i))
-    location = str(sp_id) + list_combine[sp_id-1]
+    location = tray_num_string + list_combine[sp_id-1]
     pot_num = (tray_num * len(list_A) * len(list_1)) - (len(list_A) * len(list_1)) + sp_id
     return location, pot_num
 
