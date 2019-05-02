@@ -20,6 +20,9 @@ class MyTCPServer(socketserver.BaseRequestHandler):
             result_query = exist_or_not(data_want, _tables)
             if result_query == False or result_query == None:
                 addSession(data_want, _tables)
+                for socket1 in ClientInt.listC:
+                        print(socket1)
+                        socket1.send(data) 
             else:
                 old_data_orm = query_getHash(data_want, _tables)
                 if str(hash(json.dumps(data_want).encode("utf-8"))) != old_data_orm:
