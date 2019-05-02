@@ -30,6 +30,8 @@ class SingPlantDetails(Base):
 
     uid = Column(Integer, primary_key=True, autoincrement = True)
     sp_id = Column(Integer)
+    sp_location = Column(String(255))
+    sp_pot_num = Column(String(255))
     sp_param1 = Column(String(255))
     sp_param2 = Column(String(255))
     sp_param3 = Column(String(255))
@@ -72,7 +74,8 @@ def addSession(data, cond):
         new_plantSet = PlantSet(p_name = data["Name"], p_loc = json.dumps(data["pos"]), p_rot =\
                     json.dumps(data["rotate"]), p_hash = str(hash(json.dumps(data).encode("utf-8"))))
     elif cond == "pds":
-        new_plantSet = SingPlantDetails(sp_id = data["singId"], sp_param1 = data["param1"], sp_param2 = data["param2"],sp_param3 = data["param3"], \
+        location, pot_num = get_location(data["singName"], data["singId"])
+        new_plantSet = SingPlantDetails(sp_id = data["singId"], sp_location = location, sp_pot_num = pot_num, sp_param1 = data["param1"], sp_param2 = data["param2"],sp_param3 = data["param3"], \
                     sp_hash = str(hash(json.dumps(data).encode("utf-8"))), sp_name = data["singName"])
     else:
         pass
@@ -123,6 +126,20 @@ def query_getHash(data, cond):
         print("Error: unable to fetch data")
     db.close()
     return results
+
+def get_location(name, sp_id):
+    tray_num_string = name.split("_")[0]
+    tray_num = int(tray_num_string)
+    list_A = ["A", "B", "C", "D"]
+    list_1 = [1, 2, 3, 4, 5]
+    list_combine = []
+    for i in list_1:
+        for n in list_A:
+            list_combine.append(n + str(i))
+    location = str(sp_id) + list_combine[sp_id-1]
+    pot_num = (tray_num * len(list_A) * len(list_1)) - (len(list_A) * len(list_1)) + sp_id
+    return location, pot_num
+
 
 
 
