@@ -33,7 +33,7 @@ class MyTCPServer(socketserver.BaseRequestHandler):
 
         while True:
             try:
-                data = self.request.recv(1024)
+                data = self.request.recv(1024*1000*7)
                 socket = self.request
                 addr = self.client_address
                 if not data:
@@ -57,6 +57,8 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                     elif data_want["header"] == "pds":
                         del data_want["header"]
                         db_operation("pds")
+                    elif data_want["header"] == "World Anchor":
+                        print(data_want["data"])
 
             except Exception as e:
                 print(e)
