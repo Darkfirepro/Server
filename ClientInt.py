@@ -1,7 +1,7 @@
 import pymysql
 import json
 
-from sqlalchemy import Column, String, create_engine, exists, JSON, ForeignKey, Integer, and_
+from sqlalchemy import Column, String, create_engine, exists, JSON, BLOB, ForeignKey, Integer, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -24,6 +24,7 @@ class PlantSet(Base):
     p_loc = Column(JSON)
     p_rot = Column(JSON)
     p_hash = Column(String(255))
+    p_data = Column(BLOB)
 
 class SingPlantDetails(Base):
     __tablename__ = 'SingPlant'
@@ -36,7 +37,15 @@ class SingPlantDetails(Base):
     sp_param2 = Column(String(255))
     sp_param3 = Column(String(255))
     sp_hash = Column(String(255))
+    sp_data = Column(BLOB)
     sp_name = Column(String(255), ForeignKey("PlantSet.p_name"))
+
+class WorldAnchor(Base):
+    __tablename__ = 'AnchorData'
+
+    space_name = Column(String(255), primary_key = True)
+    whole_data = Column(BLOB)
+    
 
 def create_session():
     # init connection of db:
@@ -64,32 +73,33 @@ def exist_or_not(data, cond):
     elif cond == "pds":
         #result = session.query(exists().where(SingPlantDetails.sp_id == data["singId"]) & SingPlantDetails.sp_name == data["singName"]).scalar()
         result = bool(session.query(PlantSet).filter(and_(SingPlantDetails.sp_name == data["singName"], SingPlantDetails.sp_id == data["singId"])).first())
-    else:
-        pass
+    elif cond == "wa":
+        result = session.query(exists().where(WorldAnchor.space_name == data["spaceName"])).scalar()
     return result
 
-def addSession(data, cond):  
+def addSession(data, cond, data_byte):  
     session = create_session()
     if cond == "ps":
-        new_plantSet = PlantSet(p_name = data["Name"], p_loc = json.dumps(data["pos"]), p_rot =\
-                    json.dumps(data["rotate"]), p_hash = str(hash(json.dumps(data).encode("utf-8"))))
+        new_plantSet = PlantSet(p_name = data["Name"], p_loc = data["pos"], p_rot =\
+                    data["rotate"], p_hash = str(hash(data_byte)), p_data = data_byte)
     elif cond == "pds":
         location, pot_num = get_location(data["singName"], data["singId"])
         new_plantSet = SingPlantDetails(sp_id = data["singId"], sp_location = location, sp_pot_num = pot_num, sp_param1 = data["param1"], sp_param2 = data["param2"],sp_param3 = data["param3"], \
-                    sp_hash = str(hash(json.dumps(data).encode("utf-8"))), sp_name = data["singName"])
-    else:
-        pass
+                    sp_hash = str(hash(data_byte)), sp_data = data_byte, sp_name = data["singName"])
+    elif cond == "wa":
+        new_plantSet = WorldAnchor(space_name = data["spaceName"], whole_data = data_byte)
     session.add(new_plantSet)
     session.commit()
     session.close()
 
-def updateSession(data, cond):
+def updateSession(data, cond, data_byte):
     session = create_session()
     if cond == "ps":
         result = session.query(PlantSet).filter(PlantSet.p_name == data["Name"]).first()
-        result.p_loc = json.dumps(data["pos"])
-        result.p_rot = json.dumps(data["rotate"])
-        result.p_hash = str(hash(json.dumps(data).encode("utf-8")))
+        result.p_loc = data["pos"]
+        result.p_rot = data["rotate"]
+        result.p_hash = str(hash(data_byte))
+        result.p_data = data_byte
         session.commit()
         session.close()
     elif cond == "pds":
@@ -97,7 +107,13 @@ def updateSession(data, cond):
         result.sp_param1 = data["param1"]
         result.sp_param2 = data["param2"]
         result.sp_param3 = data["param3"]
-        result.sp_hash = str(hash(json.dumps(data).encode("utf-8")))
+        result.sp_hash = str(hash(data_byte))
+        result.sp_data = data_byte
+        session.commit()
+        session.close()
+    elif cond == "wa":
+        result = session.query(WorldAnchor).filter(PlantSet.p_name == data["Name"]).first()
+        result.whole_data = data_byte
         session.commit()
         session.close()
 
@@ -139,6 +155,12 @@ def get_location(name, sp_id):
     location = tray_num_string + list_combine[sp_id-1]
     pot_num = (tray_num * len(list_A) * len(list_1)) - (len(list_A) * len(list_1)) + sp_id
     return location, pot_num
+
+def sync_plant_set():
+    session = create_session()
+    list_plant_set = session.query(PlantSet.p_data).all()
+    return list_plant_set
+
 
 
 

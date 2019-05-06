@@ -4,7 +4,7 @@ import time
 import ClientInt
 import json
 import pymysql
-from ClientInt import addSession, querySession, updateSession, deleteSession, exist_or_not, query_getHash
+from ClientInt import addSession, querySession, updateSession, deleteSession, exist_or_not, query_getHash, sync_plant_set
 import threading
 
 
@@ -19,17 +19,20 @@ class MyTCPServer(socketserver.BaseRequestHandler):
         def db_operation(_tables):
             result_query = exist_or_not(data_want, _tables)
             if result_query == False or result_query == None:
-                addSession(data_want, _tables)
+                addSession(data_want, _tables, data)
                 for socket1 in ClientInt.listC:
                         print(socket1)
                         socket1.send(data) 
             else:
-                old_data_orm = query_getHash(data_want, _tables)
-                if str(hash(json.dumps(data_want).encode("utf-8"))) != old_data_orm:
-                    for socket1 in ClientInt.listC:
-                        print(socket1)
-                        socket1.send(data)  
-                    updateSession(data_want, _tables)  
+                if _tables != "wa":
+                    old_data_orm = query_getHash(data_want, _tables)
+                    if str(hash(data)) != old_data_orm:
+                        for socket1 in ClientInt.listC:
+                            print(socket1)
+                            socket1.send(data)  
+                        updateSession(data_want, _tables, data)
+                else:
+                    updateSession(data_want, _tables, data)
 
         while True:
             try:
@@ -48,6 +51,13 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                 
                 if len(data) < 40:
                     data_want = data.strip().decode("utf-8")
+                    if data_want == "NeedToSyncPlantSet":
+                        list_plant_set = sync_plant_set()
+                        for ps in list_plant_set:
+                            print(ps[0])
+                            socket.send(ps[0])
+                            time.sleep(0.1)
+
                 
                 elif len(data) > 40:
                     data_want = json.loads(data.decode("utf-8"))
@@ -57,10 +67,12 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                     elif data_want["header"] == "pds":
                         del data_want["header"]
                         db_operation("pds")
-                    elif data_want["header"] == "World Anchor":
+                    elif data_want["header"] == "wa":
                         print(data_want["data"])
 
+
             except Exception as e:
+                socket.close()
                 print(e)
                 break
 
