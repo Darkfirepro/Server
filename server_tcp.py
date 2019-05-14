@@ -6,6 +6,7 @@ import json
 import pymysql
 from ClientInt import addSession, querySession, updateSession, deleteSession, exist_or_not, query_getHash, sync_plant_set
 import threading
+import struct
 
 
 ip_port = ('', 6666)
@@ -22,21 +23,22 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                 addSession(data_want, _tables, data)
                 for socket1 in ClientInt.listC:
                         print(socket1)
-                        socket1.send(data) 
+                        socket1.send(data + b'<EOF>') 
             else:
                 if _tables != "wa":
                     old_data_orm = query_getHash(data_want, _tables)
                     if str(hash(data)) != old_data_orm:
                         for socket1 in ClientInt.listC:
-                            print(socket1)
-                            socket1.send(data)  
+                            if socket1 != socket:
+                                print(socket1)
+                                socket1.send(data + b'<EOF>')  
                         updateSession(data_want, _tables, data)
                 else:
                     updateSession(data_want, _tables, data)
 
         while True:
             try:
-                data = self.request.recv(1024*1000*7)
+                data = self.request.recv(1024)
                 socket = self.request
                 addr = self.client_address
                 if not data:
@@ -53,14 +55,18 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                     data_want = data.strip().decode("utf-8")
                     if data_want == "NeedToSyncPlantSet":
                         list_plant_set = sync_plant_set()
+                        allbyte_send = b''
                         for ps in list_plant_set:
-                            print(ps[0])
-                            socket.send(ps[0])
-                            time.sleep(0.1)
+                            
+                            allbyte_send += ps[0] + b'<EOF>'
+                        socket.sendto(allbyte_send, addr)
+                        print(len(allbyte_send))
+                            #time.sleep(0.1)
 
                 
                 elif len(data) > 40:
-                    data_want = json.loads(data.decode("utf-8"))
+                    print(b'test here' + data)
+                    data_want = json.loads(data.decode("utf-8"),)
                     if data_want["header"] == "ps":
                         del data_want["header"]
                         db_operation("ps")
