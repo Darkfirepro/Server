@@ -161,6 +161,11 @@ def sync_plant_set():
     list_plant_set = session.query(PlantSet.p_data).all()
     return list_plant_set
 
+def sync_plant_infor():
+    session = create_session()
+    list_plant_infor = session.query(SingPlantDetails).all()
+    return list_plant_infor
+
 
 
 

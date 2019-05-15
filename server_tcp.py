@@ -4,7 +4,7 @@ import time
 import ClientInt
 import json
 import pymysql
-from ClientInt import addSession, querySession, updateSession, deleteSession, exist_or_not, query_getHash, sync_plant_set
+from ClientInt import addSession, querySession, updateSession, deleteSession, exist_or_not, query_getHash, sync_plant_set, sync_plant_infor
 import threading
 import struct
 
@@ -57,11 +57,29 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                         list_plant_set = sync_plant_set()
                         allbyte_send = b''
                         for ps in list_plant_set:
-                            
+                            #socket.sendto(ps[0] + b'<EOF>', addr)
                             allbyte_send += ps[0] + b'<EOF>'
+                            #time.sleep(0.1)
                         socket.sendto(allbyte_send, addr)
                         print(len(allbyte_send))
+
+                    if data_want == "NeedToSyncPlantInfor":
+                        list_plant_infor = sync_plant_infor()
+                        allbyte_infor = b''
+                        for pi in list_plant_infor:
+                            pi_dict = {}
+                            pi_dict["header"] = "pds_sync"
+                            pi_dict["singNameId"] = pi.sp_name + "|" + str(pi.sp_id)
+                            pi_dict["param1"] = pi.sp_param1
+                            pi_dict["param2"] = pi.sp_param2
+                            pi_dict["param3"] = pi.sp_param3
+                            pi_dict_bytes = json.dumps(pi_dict).encode("utf-8")
+                            #socket.sendto(pi_dict_bytes + b'<EOF>', addr)
+                            allbyte_infor += pi_dict_bytes + b'<EOF>'
                             #time.sleep(0.1)
+                        socket.sendto(allbyte_infor, addr)
+                        print(len(allbyte_infor))
+
 
                 
                 elif len(data) > 40:
