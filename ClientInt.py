@@ -8,6 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 #global variables put here:
 
 listC = []
+temp_str = ""
 
 #functions will be called:
 
