@@ -1,7 +1,7 @@
 import pymysql
 import json
 
-from sqlalchemy import Column, String, create_engine, exists, JSON, BLOB, ForeignKey, Integer, and_
+from sqlalchemy import Column, String, create_engine, exists, JSON, LargeBinary, BLOB, ForeignKey, Integer, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -37,15 +37,15 @@ class SingPlantDetails(Base):
     sp_param1 = Column(String(255))
     sp_param2 = Column(String(255))
     sp_param3 = Column(String(255))
+    sp_show_plant = Column(String(255))
     sp_hash = Column(String(255))
-    sp_data = Column(BLOB)
     sp_name = Column(String(255), ForeignKey("PlantSet.p_name"))
 
 class WorldAnchor(Base):
     __tablename__ = 'AnchorData'
 
     space_name = Column(String(255), primary_key = True)
-    whole_data = Column(BLOB)
+    whole_data = Column(String(255))
     
 
 def create_session():
@@ -86,7 +86,7 @@ def addSession(data, cond, data_byte):
     elif cond == "pds":
         location, pot_num = get_location(data["singName"], data["singId"])
         new_plantSet = SingPlantDetails(sp_id = data["singId"], sp_location = location, sp_pot_num = pot_num, sp_param1 = data["param1"], sp_param2 = data["param2"],sp_param3 = data["param3"], \
-                    sp_hash = str(hash(data_byte)), sp_data = data_byte, sp_name = data["singName"])
+                    sp_hash = str(hash(data_byte)), sp_show_plant = data["showPlant"], sp_name = data["singName"])
     elif cond == "wa":
         new_plantSet = WorldAnchor(space_name = data["spaceName"], whole_data = data_byte)
     session.add(new_plantSet)
@@ -108,12 +108,12 @@ def updateSession(data, cond, data_byte):
         result.sp_param1 = data["param1"]
         result.sp_param2 = data["param2"]
         result.sp_param3 = data["param3"]
+        result.sp_show_plant = data["showPlant"]
         result.sp_hash = str(hash(data_byte))
-        result.sp_data = data_byte
         session.commit()
         session.close()
     elif cond == "wa":
-        result = session.query(WorldAnchor).filter(PlantSet.p_name == data["Name"]).first()
+        result = session.query(WorldAnchor).filter(WorldAnchor.space_name == data["spaceName"]).first()
         result.whole_data = data_byte
         session.commit()
         session.close()
