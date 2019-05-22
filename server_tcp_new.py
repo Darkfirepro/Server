@@ -24,14 +24,14 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                 addSession(data_want, _tables, data)
                 for socket1 in ClientInt.listC:
                         print(socket1)
-                        socket1.send(data + b'<EOF>') 
+                        socket1.send(data) 
             else:
                 old_data_orm = query_getHash(data_want, _tables)
                 if str(hash(data)) != old_data_orm:
                     for socket1 in ClientInt.listC:
                         #if socket1 != socket:
                         print(socket1)
-                        socket1.send(data + b'<EOF>')  
+                        socket1.send(data)  
                     updateSession(data_want, _tables, data)
 
         def Add_World_Anchor(_tables):
@@ -89,22 +89,29 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                             
                             if data_want["msg"] == "NeedToSyncPlantSet":
                                 list_plant_set = sync_plant_set()
+                                socket.sendto(json.dumps({"header" : "PN", "PlantNumber" : len(list_plant_set)}).encode("utf-8") + b'<EOF>', addr)
+                                all_bytes_ps = b''
                                 for ps in list_plant_set:
-                                    socket.sendto(ps[0] + b'<EOF>', addr)
-                                    print("send plant set:" + str(len(ps[0] + b'<EOF>')))
+                                    all_bytes_ps += ps[0]
+                                socket.sendto(all_bytes_ps, addr)
+                                print("send plant set:" + str(len(all_bytes_ps)))
 
                             elif data_want["msg"] == "NeedToSyncPlantInfor":
                                 list_plant_infor = sync_plant_infor()
+                                list_pi_all = b''
                                 for pi in list_plant_infor:
                                     pi_dict = {}
                                     pi_dict["header"] = "pds_sync"
-                                    pi_dict["singNameId"] = pi.sp_name + "|" + str(pi.sp_id)
+                                    pi_dict["singId"] = pi.sp_id
+                                    pi_dict["singName"] = pi.sp_name
                                     pi_dict["param1"] = pi.sp_param1
                                     pi_dict["param2"] = pi.sp_param2
                                     pi_dict["param3"] = pi.sp_param3
-                                    pi_dict_bytes = json.dumps(pi_dict).encode("utf-8")
-                                    socket.sendto(pi_dict_bytes + b'<EOF>', addr)
-                                    print("send plant details:" + str(len(pi_dict_bytes + b'<EOF>')))
+                                    pi_dict["showPlant"] = pi.sp_show_plant
+                                    pi_dict_bytes = json.dumps(pi_dict).encode("utf-8") + b'<EOF>'
+                                    list_pi_all += pi_dict_bytes
+                                socket.sendto(list_pi_all, addr)
+                                print("send plant details:" + str(len(list_pi_all)))
 
             # except Exception as e:
             #     socket.close()
