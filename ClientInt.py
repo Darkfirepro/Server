@@ -41,6 +41,19 @@ class SingPlantDetails(Base):
     sp_hash = Column(String(255))
     sp_name = Column(String(255), ForeignKey("PlantSet.p_name"))
 
+#### test on latency time:
+class LatencyTimeDetails(Base):
+    __tablename__ = 'LatencyTime'
+
+    uid = Column(Integer, primary_key=True, autoincrement = True)
+    p_num = Column(String(255))
+    wa_start_time = Column(String(255))
+    wa_complete_time = Column(String(255))
+    sk_start_time = Column(String(255))
+    sk_complete_time = Column(String(255))
+    latency_type = Column(String(255))
+#########################
+
 class WorldAnchor(Base):
     __tablename__ = 'AnchorData'
 
@@ -167,6 +180,15 @@ def sync_plant_infor():
     list_plant_infor = session.query(SingPlantDetails).all()
     return list_plant_infor
 
+########## test on latency: ####################
+def UpdateLatencyTime(data):
+    session = create_session()
+    new_latency_time = LatencyTimeDetails(p_num = data["anchorNumber"], wa_start_time = data["waStart"], wa_complete_time = data["waComplete"], \
+        sk_start_time = data["socketStart"], sk_complete_time = data["socketComplete"], latency_type = data["latencyType"])
+    session.add(new_latency_time)
+    session.commit()
+    session.close()
+################################
 
 
 

@@ -4,7 +4,7 @@ import time
 import ClientInt
 import json
 import pymysql
-from ClientInt import addSession, querySession, updateSession, deleteSession, exist_or_not, query_getHash, sync_plant_set, sync_plant_infor
+from ClientInt import addSession, querySession, updateSession, deleteSession, exist_or_not, query_getHash, sync_plant_set, sync_plant_infor, UpdateLatencyTime
 import threading
 import struct
 import socket as sk
@@ -84,6 +84,11 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                             print("the length of the anchor: " + str(len(obj.encode("utf_8"))))
                             del data_want["header"]
                             Add_World_Anchor("wa")
+                        
+                        ##### test on latency time:
+                        elif data_want["header"] == "LatencyTest":
+                            UpdateLatencyTime(data_want)
+                        ####################################
 
                         elif data_want["header"] == "msg":
                             
@@ -112,6 +117,19 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                                     list_pi_all += pi_dict_bytes
                                 socket.sendto(list_pi_all, addr)
                                 print("send plant details:" + str(len(list_pi_all)))
+
+                            ##############test for latency here:
+                            elif data_want["msg"][0 : 12] == "SyncPlantNum":
+                                plant_num_sync_string = data_want["msg"].split(':')[1]
+                                plant_num_int = int(plant_num_sync_string)
+                                list_plant_set = sync_plant_set()
+                                all_bytes_ps_latency_test = b''
+                                for count in range(0, plant_num_int):
+                                    plant_data = list_plant_set[count]
+                                    all_bytes_ps_latency_test += plant_data[0]
+                                socket.sendto(all_bytes_ps_latency_test + b'<EOF>', addr)
+                                print("send plant set locations on number of: " + plant_num_sync_string)
+                            ###############################
 
             # except Exception as e:
             #     socket.close()
