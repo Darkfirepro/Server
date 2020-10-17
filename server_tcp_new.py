@@ -34,17 +34,6 @@ class MyTCPServer(socketserver.BaseRequestHandler):
                         socket1.send(data)  
                     updateSession(data_want, _tables, data)
 
-        def Add_World_Anchor(_tables):
-            result_query = exist_or_not(data_want, _tables)
-            path_world_anchor = "world_anchor/{}".format(data_want["spaceName"])
-            if result_query == False or result_query == None:
-                addSession(data_want, _tables, path_world_anchor)
-            else:
-                updateSession(data_want, _tables, path_world_anchor)
-            f = open(path_world_anchor, "w")
-            f.write(data_want["data"])
-            f.close
-
         while True:
             try:
                 data = self.request.recv(81920)
