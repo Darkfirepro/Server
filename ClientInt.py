@@ -1,4 +1,4 @@
-import pymysql
+#import pymysql
 import json
 
 from sqlalchemy import Column, String, create_engine, exists, JSON, LargeBinary, BLOB, ForeignKey, Integer, and_
@@ -63,7 +63,7 @@ class WorldAnchor(Base):
 
 def create_session():
     # init connection of db:
-    engine = create_engine('mysql+pymysql://Wennan:Furniture123456@localhost:3306/PlantInnovation', encoding = "utf-8", echo = False)
+    engine = create_engine('mysql+pymysql://wennan:Abc!123456@localhost:3306/PlantInnovation', encoding = "utf-8", echo = False)
     # create type of conn:
     DBSession = sessionmaker(bind=engine)
     session = DBSession()

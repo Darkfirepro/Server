@@ -11,46 +11,67 @@ class MyUDPHandler (socketserver.BaseRequestHandler):
 
     def handle(self):
 
-        def db_operation(_tables):
-            result_query = exist_or_not(data_want, _tables)
-            if result_query == False or result_query == None:
-                addSession(data_want, _tables)
-            else:
-                old_data_orm = query_getHash(data_want, _tables)
-                if str(hash(json.dumps(data_want).encode("utf-8"))) != old_data_orm:
-                    for client in ClientInt.listC:
-                        socket.sendto(data, client)  
-                    updateSession(data_want, _tables)  
-
         try:
             data = self.request[0]
             socket = self.request[1]
-            if len(data) < 25:
-                if data.strip().decode("utf-8") != "QUIT now":
-                    ClientInt.listC.append(self.client_address)
-                    
-                    print("{} ({}) {}".format(strftime("%Y-%m-%d %H:%M:%S", gmtime()), self.client_address, " send:"))
-                    print(data.strip().decode("utf-8")) 
 
-                    for client in ClientInt.listC:
-                        socket.sendto(data, client)
+            recv_str = data.decode("utf-8")
+            ClientInt.temp_str += recv_str
+            #print(len(recv_str))
+            if ClientInt.temp_str[-5:] == "<EOF>":
+                print("test here get eof")
+                obj_list = ClientInt.temp_str.strip("<EOF>").split("<EOF>")
+                ClientInt.temp_str = ""
 
-                else:
-                    ClientInt.listC.remove(self.client_address)
-                    print(self.client_address, "has disconnected!")
+                for obj in obj_list:
+                    print(obj)
+                    data_want = json.loads(obj)
 
-                    for new_client in ClientInt.listC:
-                        socket.sendto("{} has disconnected from this system".format(self.client_address), new_client)
+                    if data_want["header"] == "msg":
+                        if data_want["msg"] == "desktop connect":
+                            ClientInt.listC.append(self.client_address)
+                            print("{}".format(strftime("%Y-%m-%d %H:%M:%S", gmtime())), self.client_address, " has connected! ")
 
-            elif len(data) > 50:
-                print("get data now")
-                data_want = json.loads(data.decode("utf-8"))
-                if data_want["header"] == "ps":
-                    del data_want["header"]
-                    db_operation("ps")
-                elif data_want["header"] == "pds":
-                    del data_want["header"]
-                    db_operation("pds")
+                            feedback_msg = json.dumps({"header" : "connection", "msg" : "server received!"}).encode("utf-8")
+
+                            socket.sendto(feedback_msg, self.client_address)
+
+                    elif data_want["header"] == "TimeCost":
+                        if data_want["type"] == "OFALL":
+                            print(data_want["content"])
+                            file_time_ofall = open("OFALL.txt", "a+")
+                            file_time_ofall.write(data_want["content"] + "\r\n")
+                            file_time_ofall.close()
+                        if data_want["type"] == "ASA":
+                            print(data_want["content"])
+                            file_time_asa = open("ASA.txt", "a+")
+                            file_time_asa.write(data_want["content"] + "\r\n")
+                            file_time_asa.close()
+
+                    elif data_want["header"] == "wa":
+                        print("World Anchor received")
+                        print("the length of the anchor: " + str(len(data_want["data"])))
+                        # del data_want["header"]
+                        # Add_World_Anchor("wa")
+                        contentSend = obj.encode("utf-8") + b'<EOF>'
+                        f = open(data_want["spaceName"], 'wb')
+                        f.write(contentSend)
+                        f.close()
+
+                    elif data_want["header"] == "AnchorRequire":
+                        rf = open(data_want["id"], 'rb')
+                        content = rf.read(8192)
+                        print("try to send world anchor")
+                        times = 0
+                        while content:
+                            print(times)
+                            socket.sendto(content, self.client_address)
+                            content = rf.read(8192)
+                            time.sleep(0.001)
+                            times += len(content)
+                            # print("send :" + str(times))
+                        rf.close()
+
             
         except:
             pass

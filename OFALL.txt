@@ -1,0 +1,21 @@
+46.4385start generating the anchor
+46.4385Generating anchor done
+46.4385start serializing the anchor
+47.91481start sending anchor data
+41.62954send request to server to download anchor
+10.54391send request to server to download anchor
+94.33646start generating the anchor
+94.33646Generating anchor done
+94.33646start serializing the anchor
+98.11158start sending anchor data
+22.96754start generating the anchor
+22.96754Generating anchor done
+22.96754start serializing the anchor
+25.00252start sending anchor data
+66.67147start generating the anchor
+66.67147Generating anchor done
+66.67147start serializing the anchor
+67.36256start sending anchor data
+13.137send request to server to download anchor
+24.56516get the anchor done
+24.56516start locating the anchor
