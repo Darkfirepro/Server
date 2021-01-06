@@ -9,6 +9,9 @@ from sqlalchemy.ext.declarative import declarative_base
 
 listC = []
 temp_str = ""
+temp_byte = b''
+temp_navi = 0
+
 
 #functions will be called:
 
@@ -16,54 +19,30 @@ temp_str = ""
 Base = declarative_base()
 
 # define user object:
-class PlantSet(Base):
-    # table name:
-    __tablename__ = 'PlantSet'
+class Navigation(Base):
+    __tablename__ = 'navigation'
 
-    # table attributes:
-    p_name = Column(String(255), primary_key=True)
+    uid = Column(Integer, primary_key=True, autoincrement = True)
+    a_type = Column(String(255))
     p_loc = Column(JSON)
     p_rot = Column(JSON)
-    p_hash = Column(String(255))
+    anchor_to = Column(String(255))
+    p_time = Column(String(255))
+    action = Column(String(255))
     p_data = Column(BLOB)
 
-class SingPlantDetails(Base):
-    __tablename__ = 'SingPlant'
+class AnchorInfo(Base):
+    __tablename__ = 'anchor_info'
 
     uid = Column(Integer, primary_key=True, autoincrement = True)
-    sp_id = Column(Integer)
-    sp_location = Column(String(255))
-    sp_pot_num = Column(String(255))
-    sp_param1 = Column(String(255))
-    sp_param2 = Column(String(255))
-    sp_param3 = Column(String(255))
-    sp_show_plant = Column(String(255))
-    sp_hash = Column(String(255))
-    sp_name = Column(String(255), ForeignKey("PlantSet.p_name"))
+    anchor_name = Column(String(255))
+    anchor_pos = Column(JSON)
 
-#### test on latency time:
-class LatencyTimeDetails(Base):
-    __tablename__ = 'LatencyTime'
-
-    uid = Column(Integer, primary_key=True, autoincrement = True)
-    p_num = Column(String(255))
-    wa_start_time = Column(String(255))
-    wa_complete_time = Column(String(255))
-    sk_start_time = Column(String(255))
-    sk_complete_time = Column(String(255))
-    latency_type = Column(String(255))
-#########################
-
-class WorldAnchor(Base):
-    __tablename__ = 'AnchorData'
-
-    space_name = Column(String(255), primary_key = True)
-    whole_data = Column(String(255))
     
 
 def create_session():
     # init connection of db:
-    engine = create_engine('mysql+pymysql://wennan:Abc!123456@localhost:3306/PlantInnovation', encoding = "utf-8", echo = False)
+    engine = create_engine('mysql+pymysql://wennan1:Abc_123456@localhost:3306/PlantInnovation', encoding = "utf-8", echo = False)
     # create type of conn:
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
@@ -79,57 +58,6 @@ def querySession(q_class, q_attr, condition, choice):
         print("you have to use 0 or 1 for choice")
     session.close()   
     return data
-
-def exist_or_not(data, cond):
-    session = create_session()
-    if cond == "ps":
-        result = session.query(exists().where(PlantSet.p_name == data["Name"])).scalar()
-    elif cond == "pds":
-        #result = session.query(exists().where(SingPlantDetails.sp_id == data["singId"]) & SingPlantDetails.sp_name == data["singName"]).scalar()
-        result = bool(session.query(PlantSet).filter(and_(SingPlantDetails.sp_name == data["singName"], SingPlantDetails.sp_id == data["singId"])).first())
-    elif cond == "wa":
-        result = session.query(exists().where(WorldAnchor.space_name == data["spaceName"])).scalar()
-    return result
-
-def addSession(data, cond, data_byte):  
-    session = create_session()
-    if cond == "ps":
-        new_plantSet = PlantSet(p_name = data["Name"], p_loc = data["pos"], p_rot =\
-                    data["rotate"], p_hash = str(hash(data_byte)), p_data = data_byte)
-    elif cond == "pds":
-        location, pot_num = get_location(data["singName"], data["singId"])
-        new_plantSet = SingPlantDetails(sp_id = data["singId"], sp_location = location, sp_pot_num = pot_num, sp_param1 = data["param1"], sp_param2 = data["param2"],sp_param3 = data["param3"], \
-                    sp_hash = str(hash(data_byte)), sp_show_plant = data["showPlant"], sp_name = data["singName"])
-    elif cond == "wa":
-        new_plantSet = WorldAnchor(space_name = data["spaceName"], whole_data = data_byte)
-    session.add(new_plantSet)
-    session.commit()
-    session.close()
-
-def updateSession(data, cond, data_byte):
-    session = create_session()
-    if cond == "ps":
-        result = session.query(PlantSet).filter(PlantSet.p_name == data["Name"]).first()
-        result.p_loc = data["pos"]
-        result.p_rot = data["rotate"]
-        result.p_hash = str(hash(data_byte))
-        result.p_data = data_byte
-        session.commit()
-        session.close()
-    elif cond == "pds":
-        result = session.query(SingPlantDetails).filter(and_(SingPlantDetails.sp_name == data["singName"], SingPlantDetails.sp_id == data["singId"])).first()
-        result.sp_param1 = data["param1"]
-        result.sp_param2 = data["param2"]
-        result.sp_param3 = data["param3"]
-        result.sp_show_plant = data["showPlant"]
-        result.sp_hash = str(hash(data_byte))
-        session.commit()
-        session.close()
-    elif cond == "wa":
-        result = session.query(WorldAnchor).filter(WorldAnchor.space_name == data["spaceName"]).first()
-        result.whole_data = data_byte
-        session.commit()
-        session.close()
 
 
 
@@ -157,39 +85,25 @@ def query_getHash(data, cond):
     db.close()
     return results
 
-def get_location(name, sp_id):
-    tray_num_string = name.split("_")[0]
-    tray_num = int(tray_num_string)
-    list_A = ["A", "B", "C", "D"]
-    list_1 = [1, 2, 3, 4, 5]
-    list_combine = []
-    for i in list_1:
-        for n in list_A:
-            list_combine.append(n + str(i))
-    location = tray_num_string + list_combine[sp_id-1]
-    pot_num = (tray_num * len(list_A) * len(list_1)) - (len(list_A) * len(list_1)) + sp_id
-    return location, pot_num
-
-def sync_plant_set():
+def sync_loc_camera():
     session = create_session()
-    list_plant_set = session.query(PlantSet.p_data).all()
-    return list_plant_set
+    list_loc_infor = session.query(Navigation).all()
+    return list_loc_infor
 
-def sync_plant_infor():
+def UpdateNavigationTable(data, data_byte):
     session = create_session()
-    list_plant_infor = session.query(SingPlantDetails).all()
-    return list_plant_infor
-
-########## test on latency: ####################
-def UpdateLatencyTime(data):
-    session = create_session()
-    new_latency_time = LatencyTimeDetails(p_num = data["anchorNumber"], wa_start_time = data["waStart"], wa_complete_time = data["waComplete"], \
-        sk_start_time = data["socketStart"], sk_complete_time = data["socketComplete"], latency_type = data["latencyType"])
-    session.add(new_latency_time)
+    new_navi_data = Navigation(a_type = data["devType"], p_loc = data["pos"], p_rot = data["rot"], anchor_to = data["anchorName"], p_time = data["timeAction"], \
+                               action = data["actionType"], p_data = data_byte.encode('ascii') + b'<EOF>')
+    session.add(new_navi_data)
     session.commit()
     session.close()
-################################
 
+def UpdateAnchorPosTable(data):
+    session = create_session()
+    new_pos_data = AnchorInfo(anchor_name = data["anchorName"], anchor_pos = data["anchorPos"])
+    session.add(new_pos_data)
+    session.commit()
+    session.close()
 
 
 
